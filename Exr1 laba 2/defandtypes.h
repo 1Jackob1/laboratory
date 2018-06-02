@@ -27,7 +27,22 @@ typedef struct Stack_Operations{ //stack for signs
     size_t size;
 }t_stack_operations;
 
+int Push_Num(double);
+double Pop_Num();
+double Peek_Num();
 
+int Push_OPR(char);
+char Pop_OPR();
+char Peek_OPR();
 
+void Priority_Init();
+void States_Init();
+
+int Read_Number(char**);
+int Read_Spaces(char**);
+int Read_Unar(char**);
+int Read_Binar(char**);
+
+int Solve(char**, double*);
 
 #endif //EXR1_DEFINES_H

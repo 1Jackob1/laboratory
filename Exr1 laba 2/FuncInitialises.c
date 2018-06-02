@@ -7,6 +7,8 @@
 
 #include <float.h>
 #include <mem.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include "defandtypes.h"
 
 t_stack_operations Operations;
@@ -14,10 +16,6 @@ t_stack_number Numbers;
 
 char States[MAX_CHAR_SIZE];
 char Priority[MAX_CHAR_SIZE];
-
-
-
-
 
 //push, pop, peek for numbers stack
 int Push_Num(double a){
