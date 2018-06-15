@@ -17,11 +17,13 @@ int main() {
         }
     }
     s[i]='\0';
+    char *saveS = s;
     int code=Solve(&s, &x);
     if(code == OK)
         fprintf(out ,"done with code: %d, ans: %lf",code, x);
     else
         fprintf(out, "done with code: %d", code);
+    s=saveS;
     free(s);
     fclose(in);
     fclose(out);
