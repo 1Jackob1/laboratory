@@ -1,0 +1,9 @@
+It is required to implement a set of functions for working with strings
+Any length, using smart pointers with counting links. Required
+provide support for the following operations: 
+the creation of such a line based on array of characters,
+sub-string selection, 
+concatenation of two lines,
+extension lines (by adding a new character to the end),
+comparing two lines in lexicographical order, 
+access to individual line symbols.

@@ -1,0 +1,12 @@
+It is required to implement a function for parsing and computing arithmetic
+a mathematical expression represented as a string. 
+On input such function must take a pointer to the original string and a double pointer x, 
+by which should be stored. At the output, it must return
+integer code value, according to the following table:
+
+• (code = +0) - the function worked without errors; the result of the expression was
+written to address x;
+• (code = +1) - division by zero;
+• (code = +2) - the expression is incorrect; incorrect bracket alignment;
+• (code = +3) - the expression is incorrect; incorrect arrangement of operation signs;
+• (code = +4) - An incorrect character was found when parsing the expression.
