@@ -20,6 +20,7 @@ int main() {
     }
     s[i] = '\0';
     t_node* root = Create_Tree(&s, &x);
+    double tt = Solve_Tree(root);
     i = 0;
     while(i<VAR_SIZE) {
         if(Variables[i].type != IS_EXIST) {

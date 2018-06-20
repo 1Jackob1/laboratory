@@ -5,11 +5,19 @@
 #include <mem.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #include "SyntaxTree.h"
-
+/*-----------------------------------------------
+ * $ - unary minus
+ * @ - sin
+ * # - cos
+ * ! - exp
+ * & - log
+ * % - sqrt
+ */
 //-----------------------------------------------
 typedef int(*func_handler)(char** s); //function type
-
+typedef double (*func_math_handler)(double); //math func type
 
 typedef struct Stack_Tree { //stack for numbers
     t_node *data[MAX_STACK_SIZE];
@@ -20,8 +28,6 @@ typedef struct Stack_Operations { //stack for signs
     char data[MAX_STACK_SIZE];
     size_t size;
 } t_stack_operations;
-
-
 
 int Push_Tree_Node(t_node*);
 t_node* Pop_Tree_Node();
@@ -38,6 +44,26 @@ int Read_Spaces(char**);
 int Read_Unar(char**);
 int Read_Binar(char**);
 int Read_Var(char**);
+
+double Sin(double a) {
+    return (a == DBL_MIN) ? DBL_MIN : sin(a);
+}
+
+double Cos(double a) {
+    return (a == DBL_MIN) ? DBL_MIN : cos(a);
+}
+
+double Log(double a) {
+    return (a == DBL_MIN) ? DBL_MIN : log(a);
+}
+
+double Sqrt(double a) {
+    return (a == DBL_MIN) ? DBL_MIN : sqrt(a);
+}
+
+double Exp(double a) {
+    return (a == DBL_MIN) ? DBL_MIN : exp(a);
+}
 
 t_node* New_Node();
 //--------------------------------
@@ -99,6 +125,11 @@ t_node* New_Node() {
 void Priority_Init() {
     memset(Priority, 125, MAX_CHAR_SIZE* sizeof(char));
     Priority['$'] = 3;//unary minus
+    Priority['@'] = 3;
+    Priority['#'] = 3;
+    Priority['%'] = 3;
+    Priority['&'] = 3;
+    Priority['!'] = 3;
     Priority['*'] = 2;//times and div has the same priority
     Priority['/'] = 2;//--
     Priority['+'] = 1;//plus and minus has lower priority
@@ -114,6 +145,11 @@ void States_Init() {
 
     for (int i = 'a'; i <= 'z'; ++i)
         States[i] = 8;
+    States['!'] = 9;
+    States['@'] = 9;
+    States['#'] = 9;
+    States['%'] = 9;
+    States['&'] = 9;
     States[' '] = 0;
     States['-'] = 2;
     States['*'] = 3;
@@ -165,8 +201,33 @@ int Calc(char Operation) {
     if(Operation == '$') {
         tmp->t_data.opr = '$';
         tmp->CHILD[0] = F_Num;
-        Push_Tree_Node(tmp);
-        return OK;
+        return Push_Tree_Node(tmp);
+    }
+
+    switch (Operation) {
+        case '@':
+            tmp->t_data.ind = 0;
+            break;
+        case '#':
+            tmp->t_data.ind = 1;
+            break;
+        case '!':
+            tmp->t_data.ind = 2;
+            break;
+        case '%':
+            tmp->t_data.ind = 3;
+            break;
+        case '&':
+            tmp->t_data.ind = 4;
+            break;
+        default:
+            break;
+    }
+
+    if((Operation == '!') || (Operation == '@') || (Operation == '#') || (Operation == '%') || (Operation == '&')) {
+        tmp->type = IS_FUN;
+        tmp->CHILD[0] = F_Num;
+        return Push_Tree_Node(tmp);
     }
 
     t_node *S_Num = Pop_Tree_Node();
@@ -239,6 +300,28 @@ int Read_Binar(char **str) {
 }
 
 int Read_Var(char **str) {
+    if((strlen(*str) > 4) && (**str == 's' || **str == 'c' || **str == 'e' || **str == 'l')) {
+        if((**str == 's') && (*((*str) + 1) == 'i') && (*((*str) + 2) == 'n')) {
+            (*str) += 3;
+            return Push_OPR('@');
+        }
+        if((**str == 'c') && (*((*str) + 1) == 'o') && (*((*str) + 2) == 's')) {
+            (*str) += 3;
+            return Push_OPR('#');;
+        }
+        if((**str == 'e') && (*((*str) + 1) == 'x') && (*((*str) + 2) == 'p')) {
+            (*str) += 3;
+            return Push_OPR('!');
+        }
+        if((**str == 'l') && (*((*str) + 1) == 'o') && (*((*str) + 2) == 'g')) {
+            (*str) += 3;
+            return Push_OPR('&');
+        }
+        if((**str == 's') && (*((*str) + 1) == 'q') && (*((*str) + 2) == 'r') && (*((*str) + 3) == 't')) {
+            (*str) += 4;
+            return Push_OPR('%');
+        }
+    }
     t_node *tmp = New_Node();
     tmp->type = IS_VAR;
     tmp->t_data.ind = **str - 'a';
@@ -258,17 +341,19 @@ int Error(char **ptr) {
 int State = 0;
 int PrevState = 0;
 
-func_handler FUNCTIONS_MATRIX[3][9] = {
-        {&Read_Spaces, &Read_Number, &Read_Binar, &Read_Unar,  &Read_Binar, &Read_Binar, &Read_Spaces, &Error, &Read_Var},
-        {&Read_Spaces, &Error,       &Read_Binar, &Read_Binar, &Error,      &Read_Binar, &Read_Spaces, &Error, &Error   },
-        {&Read_Spaces, &Read_Number, &Read_Binar, &Read_Binar, &Read_Unar,  &Read_Binar, &Read_Spaces, &Error, &Read_Var}
+func_handler FUNCTIONS_MATRIX[3][10] = {
+        {&Read_Spaces, &Read_Number, &Read_Binar, &Read_Unar,  &Read_Binar, &Read_Binar, &Read_Spaces, &Error, &Read_Var, &Read_Var},
+        {&Read_Spaces, &Error,       &Read_Binar, &Read_Binar, &Read_Binar,      &Read_Binar, &Read_Spaces, &Error, &Error   , &Read_Var},
+        {&Read_Spaces, &Read_Number, &Read_Binar, &Read_Binar, &Read_Unar,  &Read_Binar, &Read_Spaces, &Error, &Read_Var, &Read_Var}
 };
 
-int TRANSITION_MATRIX[3][9] = {
-        {0, 1,     2, 2, 2, 2, END_STRING, ERROR, 1    },
-        {0, ERROR, 2, 2, 2, 2, END_STRING, ERROR, ERROR},
-        {0, 1,     2, 2, 2, 2, END_STRING, ERROR, 1    }
+int TRANSITION_MATRIX[3][10] = {
+        {0, 1,     2, 2, 2, 2, END_STRING, ERROR, 1,     2},
+        {0, ERROR, 2, 2, 2, 2, END_STRING, ERROR, ERROR, 2},
+        {0, 1,     2, 2, 2, 2, END_STRING, ERROR, 1,     2}
 };
+
+func_math_handler Math_Functions[5] = { &Sin, &Cos, &Exp, &Sqrt, &Log };
 
 void Null_State() {
     State = 0;
@@ -357,7 +442,7 @@ double Solve_Tree(t_node* node) {
                     return (Ztmp / Ftmp);
                 }
                 default:
-                    return ERR_SIGNS;
+                    return DBL_MIN;
 
             }
         }
@@ -365,6 +450,11 @@ double Solve_Tree(t_node* node) {
             return node->t_data.num;
         case IS_VAR:
             return Variables[node->t_data.ind].data;
+        case IS_FUN:
+            Ztmp = Solve_Tree(node->CHILD[0]);
+            if((node->t_data.ind == 4) && (Ztmp <= 0))
+                return DBL_MIN;
+            return (Ztmp == DBL_MIN) ? DBL_MIN : Math_Functions[node->t_data.ind](Ztmp);
     }
 }
 
