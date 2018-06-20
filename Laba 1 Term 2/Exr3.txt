@@ -1,0 +1,9 @@
+Let there be a system of linear algebraic equations (SLAE) of dimension n,
+represented in the matrix form: A · X = F. It is required to solve this system,
+using the Gauss method.
+
+As input, the user enters a natural number n.
+The dimension of the system, and the rows of the extended matrix B.
+To verify of the result, we need to derive the solution vector X and the residual vector R = A · X-F,
+represented as two consecutive columns. If during execution
+one of the above steps, an error occurred, output the corresponding message.

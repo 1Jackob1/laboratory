@@ -1,0 +1,15 @@
+It is required to realize the trapezoid method for the numerical integration of some
+of the given function f(x) on the interval [a, b].
+In the trapezoid method, the initial segment is divided into a set of n sub-cuts
+of equal length, on each of which the value of the integral is calculated approximately
+(as the area of the trapezium formed by its extreme points and the corresponding
+marks on the function graph).
+The calculation formula obtained in this way has the following form(formula.png)
+
+In the case when the function f(x) is continuous on the whole interval [a, b], with n ascending
+to infinity T (f, a, b, n) converges to the exact value of the integral.
+To achieve a given accuracy ε> 0, a sequence τk = T (f, a, b, 2^k · N), where n is the size of the initial partition,
+k = 0, 1,. . . . The process will is stopped in the case if | τk - τk-1 | < ε either the number of iterations of k 
+exceeds some threshold value m.
+The solution of the problem must be formalized in the form of a function that accepts at the input
+a pointer to a real-valued function f(x), a and b, and parameters n, ε and m.

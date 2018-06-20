@@ -1,0 +1,13 @@
+It is required to write a function that realizes the solution of the quadratic equation.
+The input parameters of the function must be real-valued
+coefficients (a, b and c), as well as a pair of real pointers x1 and x2. At the exit
+the function must return an integer stat value.
+In this case, the following situations should be envisaged:
+
+• (stat = -2) - there are complex conjugate roots; in variables by
+addresses x1 and x2 are written the real and imaginary part of any of them;
+• (stat = -1) - there are infinitely many solutions;
+• (stat = +0) - there are no solutions;
+• (stat = +1) - there is a unique solution, the value of which writes-x1;
+• (stat = +2) - there are two solutions whose values ​​are written down by
+addresses x1 and x2.
