@@ -1,11 +1,16 @@
-#ifndef EXR1_FUNCINITIALISES_H
-#define EXR1_FUNCINITIALISES_H
+//
+// Created by abdurashidov.aak on 21.06.2018.
+//
+
+#include "SyntaxTree.h"
+
 
 #include <float.h>
 #include <mem.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdio.h>
 #include "SyntaxTree.h"
 /*-----------------------------------------------
  * $ - unary minus
@@ -16,7 +21,7 @@
  * % - sqrt
  */
 //-----------------------------------------------
-typedef int(*func_handler)(char** s); //function type
+typedef int(*func_handler)(char**, t_tree*); //function type
 typedef double (*func_math_handler)(double); //math func type
 
 typedef struct Stack_Tree { //stack for numbers
@@ -39,11 +44,11 @@ char Peek_OPR();
 void Priority_Init();
 void States_Init();
 
-int Read_Number(char**);
-int Read_Spaces(char**);
-int Read_Unar(char**);
-int Read_Binar(char**);
-int Read_Var(char**);
+int Read_Number(char**, t_tree*);
+int Read_Spaces(char**, t_tree*);
+int Read_Unar(char**, t_tree*);
+int Read_Binar(char**, t_tree*);
+int Read_Var(char**, t_tree*);
 
 double Sin(double a) {
     return (a == DBL_MIN) ? DBL_MIN : sin(a);
@@ -165,7 +170,7 @@ void States_Init() {
 
 //funcs for finite automate
 
-int Read_Number(char **str) {
+int Read_Number(char **str, t_tree *src) {
     double a = strtod(*str, str);
     t_node *tmp = New_Node();
     tmp->type = IS_NUM;
@@ -174,16 +179,16 @@ int Read_Number(char **str) {
     return 0;
 }
 
-int Read_Spaces(char **str) {
+int Read_Spaces(char **str, t_tree *src) {
     while(isspace(**str) && (**str != '\0'))
         ++(*str);
 
     return (**str == '\0') ? END_STRING : 0;
 }
 
-int Read_Unar(char **str) {
+int Read_Unar(char **str, t_tree *src) {
     if(**str != '-')
-        return  Read_Binar(str);
+        return  Read_Binar(str, src);
     Push_OPR('$');
     ++(*str);
     return 0;
@@ -239,10 +244,10 @@ int Calc(char Operation) {
         case '-':
         case '*':
         case '/': {
-           tmp->t_data.opr = Operation;
-           tmp->CHILD[0] = S_Num;
-           tmp->CHILD[1] = F_Num;
-           Push_Tree_Node(tmp);
+            tmp->t_data.opr = Operation;
+            tmp->CHILD[0] = S_Num;
+            tmp->CHILD[1] = F_Num;
+            Push_Tree_Node(tmp);
             break;
         }
         default:
@@ -252,7 +257,7 @@ int Calc(char Operation) {
     return OK;
 }
 
-int Read_Binar(char **str) {
+int Read_Binar(char **str, t_tree *src) {
     char c = **str;
     switch (c) {
         case '(': {
@@ -287,7 +292,7 @@ int Read_Binar(char **str) {
             Operations.size = i;
             if(Numbers.size == 0) {
                 if(c == '-')
-                    return Read_Unar(str);
+                    return Read_Unar(str, src);
                 return ERR_SIGNS;
             }
             Push_OPR(c);
@@ -299,7 +304,7 @@ int Read_Binar(char **str) {
 
 }
 
-int Read_Var(char **str) {
+int Read_Var(char **str, t_tree *src) {
     if((strlen(*str) > 4) && (**str == 's' || **str == 'c' || **str == 'e' || **str == 'l')) {
         if((**str == 's') && (*((*str) + 1) == 'i') && (*((*str) + 2) == 'n')) {
             (*str) += 3;
@@ -325,14 +330,14 @@ int Read_Var(char **str) {
     t_node *tmp = New_Node();
     tmp->type = IS_VAR;
     tmp->t_data.ind = **str - 'a';
-    Variables[**str - 'a'].data = 0;
-    Variables[**str - 'a'].type = IS_EXIST;
+    src->Vars[**str - 'a'].data = 0;
+    src->Vars[**str - 'a'].type = IS_EXIST;
     Push_Tree_Node(tmp);
     ++(*str);
     return 0;
 }
 
-int Error(char **ptr) {
+int Error(char **ptr, t_tree *src) {
     return ERROR;
 }
 
@@ -353,7 +358,7 @@ int TRANSITION_MATRIX[3][10] = {
         {0, 1,     2, 2, 2, 2, END_STRING, ERROR, 1,     2}
 };
 
-func_math_handler Math_Functions[5] = { &Sin, &Cos, &Exp, &Sqrt, &Log };
+const func_math_handler Math_Functions[5] = { &Sin, &Cos, &Exp, &Sqrt, &Log };
 
 void Null_State() {
     State = 0;
@@ -369,16 +374,13 @@ void Null_Stacks() {
     Numbers.size = 0;
 }
 
-t_node* Create_Tree(char** str, double* x) {
+t_tree* Create_Tree(char** str, double* x) {
     *x = 0;
     Priority_Init();
     States_Init();
     Null_State();
     Null_Stacks();
-    for (int i = 0; i < VAR_SIZE; ++i) {
-        Variables[i].data = 0;
-        Variables[i].type = IS_DEFLT;
-    }
+    t_tree *tree_root = malloc(sizeof(t_tree));
     while(1){
         State = TRANSITION_MATRIX[PrevState][States[**str]];
         if(State == ERROR){
@@ -394,7 +396,7 @@ t_node* Create_Tree(char** str, double* x) {
             return NULL;
         }
 
-        int tmp = FUNCTIONS_MATRIX[PrevState][States[**str]](str);
+        int tmp = FUNCTIONS_MATRIX[PrevState][States[**str]](str, tree_root);
         PrevState = State;
         if(tmp == ERROR) {
             return NULL;
@@ -414,18 +416,24 @@ t_node* Create_Tree(char** str, double* x) {
         return NULL;
     }
 
-    return Pop_Tree_Node();
+    tree_root->root = Pop_Tree_Node();
+    for (int i = 0; i < VAR_SIZE; ++i) {
+        tree_root->Vars[i].data = 0;
+    }
+    return tree_root;
 }
 
-double Solve_Tree(t_node* node) {
+
+
+double Solve_Tree_Nodes(t_node* node, t_var *Variables) {
     if(node == NULL)
         return 0;
     double Ztmp, Ftmp;//Zerotmp Firsttmp
     switch (node->type) {
         case IS_OPR: {
-            if((Ztmp = Solve_Tree(node->CHILD[0])) == DBL_MIN)
+            if((Ztmp = Solve_Tree_Nodes(node->CHILD[0], Variables)) == DBL_MIN)
                 return DBL_MIN;
-            if((Ftmp = Solve_Tree(node->CHILD[1])) == DBL_MIN)
+            if((Ftmp = Solve_Tree_Nodes(node->CHILD[1], Variables)) == DBL_MIN)
                 return DBL_MIN;
             switch (node->t_data.opr) {
                 case '$':
@@ -451,18 +459,106 @@ double Solve_Tree(t_node* node) {
         case IS_VAR:
             return Variables[node->t_data.ind].data;
         case IS_FUN:
-            Ztmp = Solve_Tree(node->CHILD[0]);
+            Ztmp = Solve_Tree_Nodes(node->CHILD[0], Variables);
             if((node->t_data.ind == 4) && (Ztmp <= 0))
                 return DBL_MIN;
             return (Ztmp == DBL_MIN) ? DBL_MIN : Math_Functions[node->t_data.ind](Ztmp);
     }
 }
 
-int Set_Var(size_t ind, const double *val) {
+double Solve_Tree(t_tree* root) {
+    return Solve_Tree_Nodes(root->root, root->Vars);
+}
+
+int Set_Var(t_tree *root, size_t ind, const double *val) {
     if((ind > 25)|| (val == NULL))
         return ERROR;
-    Variables[ind].data = *val;
-    Variables[ind].type = IS_SETED;
+    root->Vars[ind].data = *val;
+    root->Vars[ind].type = IS_SETED;
     return OK;
 }
-#endif //EXR1_FUNCINITIALISES_H
+
+
+t_node* Copy_Tree_Nodes(t_node *src) {
+   t_node *tmp = malloc(sizeof(t_node));
+   if(tmp == NULL)
+       return NULL;
+   *tmp = *src;
+   if(src->CHILD[0] == NULL)
+       return tmp;
+   tmp->CHILD[0] = Copy_Tree_Nodes(src->CHILD[0]);
+   if(src->CHILD[1] == NULL)
+       return tmp;
+   tmp->CHILD[1] = Copy_Tree_Nodes(src->CHILD[1]);
+    return tmp;
+}
+
+t_tree* Copy_Tree(t_tree *src) {
+    t_tree *new_root = malloc(sizeof(t_tree));
+    new_root->root = Copy_Tree_Nodes(src->root);
+    for (int i = 0; i < VAR_SIZE; ++i) {
+        new_root->Vars[i] = src->Vars[i] ;
+    }
+    return new_root;
+}
+
+void Delete_Tree_Nodes(t_node *node) {
+    if (node == NULL)
+        return;
+    Delete_Tree_Nodes(node->CHILD[0]);
+    Delete_Tree_Nodes(node->CHILD[1]);
+    free(node);
+}
+
+int Delete_Tree(t_tree **src) {
+    Delete_Tree_Nodes((*src)->root);
+    free(*src);
+    *src = NULL;
+    return OK;
+}
+
+void Print_Tree(t_node *src) {
+    if (src == NULL)
+        return;
+    switch (src->type){
+        case IS_NUM:
+            printf(" %lf ", src->t_data.num);
+            return;
+        case IS_VAR:
+            printf(" %c ", src->t_data.ind + 'a');
+            return;
+        case IS_OPR:
+            if (src->CHILD[1] == NULL){
+                printf(" %c(", src->t_data.opr);
+                Print_Tree(src->CHILD[0]);
+                printf(" ) ");
+                return;
+            }
+            printf("( ");
+            Print_Tree(src->CHILD[0]);
+            printf("%c ", src->t_data.opr );
+            Print_Tree(src->CHILD[1]);
+            printf(" ) ");
+            return;
+        case IS_FUN:
+            switch (src->t_data.ind) {
+                case 0:
+                    printf("sin(");
+                    break;
+                case 1:
+                    printf("cos(");
+                    break;
+                case 2:
+                    printf("exp(");
+                    break;
+                case 3:
+                    printf("sqrt(");
+                    break;
+                case 4:
+                    printf("log(");
+            }
+            Print_Tree(src->CHILD[0]);
+            printf(" ) ");
+            return;
+    }
+}

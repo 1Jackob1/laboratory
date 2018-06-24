@@ -19,11 +19,18 @@ int main() {
         }
     }
     s[i] = '\0';
-    t_node* root = Create_Tree(&s, &x);
+    t_tree *root = Create_Tree(&s, &x);
     double tt = Solve_Tree(root);
+    t_tree *new_root = Copy_Tree(root);
+    if(new_root == NULL){
+        printf("Can't copy!\n");
+        return 0;
+    }
+    Delete_Tree(&root);
+    double tt2 = Solve_Tree(new_root);
     i = 0;
-    while(i<VAR_SIZE) {
-        if(Variables[i].type != IS_EXIST) {
+    while(i < VAR_SIZE) {
+        if(root->Vars[i].type != IS_EXIST) {
             i++;
             continue;
         }
@@ -31,7 +38,7 @@ int main() {
         printf("Please set variable \"%c\" : ", i + 'a');
         double tmp = 0;
         scanf("%lf", &tmp);
-        if(Set_Var(i, &tmp) != OK){
+        if(Set_Var(root, (size_t)i, &tmp) != OK){
             printf("\nCan't set value, pls try again!\n");
             continue;
         }
@@ -39,6 +46,7 @@ int main() {
     }
     double ans = Solve_Tree(root);
     printf("%lf", ans);
+    Print_Tree(new_root->root);
     free(s0);
     fclose(in);
     fclose(out);

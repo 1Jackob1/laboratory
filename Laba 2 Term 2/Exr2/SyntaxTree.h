@@ -1,5 +1,11 @@
-#ifndef EXR1_DEFINES_H
-#define EXR1_DEFINES_H
+//
+// Created by abdurashidov.aak on 21.06.2018.
+//
+
+#ifndef LAB2AER2_SYNTAXTREE_H
+#define LAB2AER2_SYNTAXTREE_H
+
+#include <stdlib.h>
 
 #define MAX_STACK_SIZE 100
 #define MAX_CHAR_SIZE 127
@@ -28,8 +34,15 @@ typedef struct Vars {
     t_type_var type;
 } t_var;
 
-t_node* Create_Tree(char**, double*);
-double Solve_Tree(t_node*);
-int Set_Var(size_t ind, const double*);
-t_var Variables[VAR_SIZE];
-#endif //EXR1_DEFINES_H
+typedef struct {
+    t_node *root;
+    t_var Vars[26];
+} t_tree;
+
+t_tree* Create_Tree(char**, double*);
+double Solve_Tree(t_tree*);
+int Set_Var(t_tree* ,size_t ind, const double*);
+t_tree* Copy_Tree(t_tree*);
+int Delete_Tree(t_tree**);
+void Print_Tree(t_node*);
+#endif //LAB2AER2_SYNTAXTREE_H
